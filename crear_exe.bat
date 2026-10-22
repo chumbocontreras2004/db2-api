@@ -8,14 +8,22 @@ if errorlevel 1 (
     goto error
 )
 
-echo [1/4] Anadiendo PyInstaller al proyecto...
+echo [0/4] Limpiando compilaciones anteriores...
+if exist "dist" rd /s /q "dist"
+if exist "build" rd /s /q "build"
+if exist "JuegoPPT.spec" del /f /q "JuegoPPT.spec"
+
+echo [1/4] Anadiendo dependencias necesarias...
 uv add --dev pyinstaller
 if errorlevel 1 goto error
 
-echo [2/4] Comprobando que ibm_db esta disponible...
-uv run python -c "import ibm_db"
+uv add python-dotenv pywebview
+if errorlevel 1 goto error
+
+echo [2/4] Comprobando librerias en el entorno...
+uv run python -c "import ibm_db, webview, dotenv"
 if errorlevel 1 (
-    echo Falta ibm_db en el entorno. Ejecuta: uv add ibm_db
+    echo Faltan librerias en el entorno. Revisa la salida de error anterior.
     goto error
 )
 
@@ -28,12 +36,28 @@ if "%CLID%"=="" (
 )
 echo Driver encontrado en: %CLID%
 
-echo [4/4] Creando el ejecutable, puede tardar un par de minutos...
-uv run pyinstaller --noconfirm --onefile --noconsole --name JuegoPPT --hidden-import ppt --hidden-import db2s2 --hidden-import juego --collect-all ibm_db --add-data "%CLID%;clidriver" lanzador_ppt.py
+if not exist "index.html" (
+    echo ERROR: Falta el archivo index.html en la carpeta raiz.
+    goto error
+)
+
+echo [4/4] Creando el ejecutable...
+uv run pyinstaller --noconfirm --onefile --noconsole --name JuegoPPT ^
+    --hidden-import ppt ^
+    --hidden-import db2s2 ^
+    --hidden-import juego ^
+    --hidden-import dotenv ^
+    --hidden-import webview.platforms.winforms ^
+    --collect-all ibm_db ^
+    --collect-all webview ^
+    --add-data "index.html;." ^
+    --add-data "%CLID%;clidriver" ^
+    lanzador_ppt.py
 if errorlevel 1 goto error
 
 echo.
 echo Listo. El ejecutable esta en: %~dp0dist\JuegoPPT.exe
+echo Recuerda que si usas un archivo .env para las credenciales, debe estar junto a JuegoPPT.exe en la carpeta dist.
 pause
 exit /b 0
 
