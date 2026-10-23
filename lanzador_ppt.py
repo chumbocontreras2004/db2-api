@@ -103,7 +103,6 @@ class BridgeApp:
         self.parar = threading.Event()
         self.enviando_job = False
         self._vigilante_iniciado = False
-        self.api_lista = threading.Event()  # se activa cuando pywebview ya esta operativo
         self._logs = []
         self._logs_lock = threading.Lock()
         self._lock_vigilante = threading.Lock()
@@ -129,7 +128,6 @@ class BridgeApp:
 
     def listo(self):
         """La llama el HTML en cuanto pywebview esta listo: arranque inmediato, sin esperas."""
-        self.api_lista.set()
         self.log(f"[diag] API de pywebview lista a los {_t()} del arranque de Python")
         self.iniciar_vigilante()
 
@@ -379,6 +377,41 @@ class BridgeApp:
         return lineas
 
 
+_BRIDGE = None  # la instancia de BridgeApp; vive en una global para que pywebview no la recorra
+
+
+class ApiJS:
+    """Lo unico que pywebview expone al HTML (window.pywebview.api.*).
+
+    pywebview recorre recursivamente TODOS los atributos del objeto js_api para ver que
+    puede exponer. Con BridgeApp como js_api, ese recorrido entraba en `ventana` (la
+    ventana de WinForms/WebView2, un grafo enorme de objetos .NET/COM), daba miles de
+    errores y bloqueaba todo Python ~21 s al arrancar. Esta clase no tiene atributos:
+    solo metodos que delegan en la global _BRIDGE, asi no hay nada que recorrer.
+    """
+
+    def listo(self):
+        return _BRIDGE.listo()
+
+    def enviar_dificultad(self, clave_dif):
+        return _BRIDGE.enviar_dificultad(clave_dif)
+
+    def jugar(self, eleccion):
+        return _BRIDGE.jugar(eleccion)
+
+    def comprar(self, item):
+        return _BRIDGE.comprar(item)
+
+    def volver_a_dificultad(self):
+        return _BRIDGE.volver_a_dificultad()
+
+    def obtener_logs(self):
+        return _BRIDGE.obtener_logs()
+
+    def cerrar(self):
+        return _BRIDGE.cerrar()
+
+
 def _carpeta_perfil_unica():
     """Carpeta de perfil de WebView2 distinta en cada arranque.
 
@@ -502,78 +535,6 @@ def _comprobar_guardian(app_instancia):
         s.close()
 
 
-def _conexiones_sin_respuesta():
-    """Devuelve [(pid, remoto)] de las conexiones TCP en SYN_SENT (intentando conectar, sin respuesta)."""
-    salida = subprocess.run(
-        ["netstat", "-ano", "-p", "TCP"],
-        capture_output=True,
-        text=True,
-        errors="replace",
-        timeout=8,
-        creationflags=0x08000000,  # CREATE_NO_WINDOW
-    ).stdout
-    res = []
-    for linea in salida.splitlines():
-        partes = linea.split()
-        # TCP  local:puerto  remoto:puerto  ESTADO  PID
-        if len(partes) >= 5 and partes[0].upper() == "TCP" and "SYN" in partes[3].upper():
-            res.append((partes[4], partes[2]))
-    return res
-
-
-def _nombre_proceso(pid, cache={}):
-    if pid in cache:
-        return cache[pid]
-    nombre = f"PID {pid}"
-    try:
-        out = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=8,
-            creationflags=0x08000000,
-        ).stdout.strip()
-        if out.startswith('"'):
-            nombre = out.split('","')[0].strip('"') + f" (PID {pid})"
-    except Exception:
-        pass
-    cache[pid] = nombre
-    return nombre
-
-
-def _diagnosticar_arranque(app_instancia, limite=40):
-    """Mientras WebView2 arranca, anota a que IPs intenta conectar sin recibir respuesta.
-
-    Un retraso de ~21 s exactos es el timeout de conexion TCP de Windows (3+6+12 s): si en
-    las ejecuciones lentas aparece aqui una IP en SYN_SENT, esa es la que lo provoca.
-    Se detiene en cuanto pywebview esta listo (o a los `limite` segundos).
-    """
-    if sys.platform != "win32":
-        return
-    vistas = set()
-    avisado_sin_red = False
-    while not app_instancia.api_lista.is_set() and time.time() - T0 < limite:
-        try:
-            for pid, remoto in _conexiones_sin_respuesta():
-                if (pid, remoto) not in vistas:
-                    vistas.add((pid, remoto))
-                    app_instancia.log(
-                        f"[diag] a los {_t()}: {_nombre_proceso(pid)} intenta conectar "
-                        f"a {remoto} y no recibe respuesta (SYN_SENT)"
-                    )
-        except Exception as e:
-            app_instancia.log(f"[diag] no se pudo ejecutar netstat: {e}")
-            return
-        if not avisado_sin_red and not vistas and time.time() - T0 > 8:
-            avisado_sin_red = True
-            app_instancia.log(
-                f"[diag] a los {_t()} sigue sin arrancar y NO hay conexiones sin respuesta: "
-                "el retraso no parece de red (revisar antivirus, disco o GPU)"
-            )
-        app_instancia.api_lista.wait(1)
-
-
 def iniciar_app(app_instancia):
     """Respaldo: si el HTML no avisa con listo() en 5 s, arranca el vigilante igualmente."""
     app_instancia.parar.wait(5)
@@ -582,12 +543,13 @@ def iniciar_app(app_instancia):
 
 if __name__ == "__main__":
     app_bridge = BridgeApp()
+    _BRIDGE = app_bridge
     ruta_html = _ruta_recurso("index.html")
 
     ventana = webview.create_window(
         title="Piedra, Papel o Tijera — Mainframe Edition",
         url=ruta_html,
-        js_api=app_bridge,
+        js_api=ApiJS(),
         fullscreen=True,
     )
 
@@ -612,7 +574,6 @@ if __name__ == "__main__":
     app_bridge.log(
         "[diag] WebView2 args: " + os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
     )
-    threading.Thread(target=_diagnosticar_arranque, args=(app_bridge,), daemon=True).start()
     # Pasamos 'lambda: iniciar_app(app_bridge)' a start para que arranque tras cargar la ventana
     opciones = {"gui": "edgechromium"}
     if "storage_path" in inspect.signature(webview.start).parameters:
