@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('index.html', '.'), ('C:/Users/Admin/Desktop/Trabajo PSS/Formación mainframe/db2-api/.venv/Lib/site-packages/clidriver', 'clidriver')]
+datas = [('index.html', '.'), ('C:/Users/Admin/Trabajoyprogramacionyfisica/TrabajoPSS/Formacionmainframe/Proyecto/db2-api/.venv/Lib/site-packages/clidriver', 'clidriver')]
 binaries = []
 hiddenimports = ['ppt', 'db2s2', 'juego', 'dotenv', 'webview.platforms.winforms']
 tmp_ret = collect_all('ibm_db')

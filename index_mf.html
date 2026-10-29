@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piedra, Papel o Tijera — Mainframe Tactical Edition</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card-bg: #151d2f;
+            --card-border: #222f49;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --gold: #f59e0b;
+            --gold-bg: rgba(245, 158, 11, 0.12);
+            --green: #10b981;
+            --green-bg: rgba(16, 185, 129, 0.12);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.15);
+            --purple: #a855f7;
+            --arena-bg: #0a0e17;
+            --btn-hover: #1e293b;
+            --terminal-bg: #030712;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] {
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #0284c7;
+            --gold: #d97706;
+            --gold-bg: rgba(217, 119, 6, 0.12);
+            --green: #059669;
+            --green-bg: rgba(5, 150, 105, 0.12);
+            --red: #dc2626;
+            --red-bg: rgba(220, 38, 38, 0.12);
+            --purple: #9333ea;
+            --arena-bg: #f8fafc;
+            --btn-hover: #e2e8f0;
+            --terminal-bg: #0f172a;
+            --shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* HEADER SUPERIOR */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 28px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-icon {
+            font-size: 1.6rem;
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: inset 0 0 0 1px var(--card-border);
+        }
+
+        .pill-gold {
+            background: var(--gold-bg);
+            color: var(--gold);
+            box-shadow: inset 0 0 0 1px var(--gold);
+        }
+
+        .icon-btn {
+            background: var(--arena-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--btn-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-exit {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red);
+            padding: 0 14px;
+            width: auto;
+            font-weight: 700;
+            font-size: 0.9rem;
+            gap: 6px;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        main {
+            flex: 1;
+            position: relative;
+            padding: 20px 28px;
+            display: flex;
+        }
+
+        .vista {
+            position: absolute;
+            inset: 20px 28px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .vista.activa {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* VISTA 1: LAUNCHER */
+        #vista-launcher {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .card-launcher {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 36px 40px;
+            width: 580px;
+            max-width: 90vw;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .launcher-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .launcher-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+        }
+
+        .espera-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            border-radius: 14px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px dashed rgba(56, 189, 248, 0.45);
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .espera-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(56, 189, 248, 0.25);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: espera-giro 0.9s linear infinite;
+        }
+
+        @keyframes espera-giro {
+            to { transform: rotate(360deg); }
+        }
+
+        .terminal-container {
+            background: var(--terminal-bg);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            text-align: left;
+            height: 150px;
+            overflow-y: auto;
+            color: #38bdf8;
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        /* VISTA 2: ARENA + TIENDA */
+        #vista-juego {
+            display: none;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+            gap: 24px;
+        }
+
+        #vista-juego.activa {
+            display: grid;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+            min-width: 0;
+        }
+
+        /* SECCIÓN DE LA ARENA */
+        .arena-top-metrics {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-badge {
+            flex: 1;
+            background: var(--arena-bg);
+            border: 1px solid var(--card-border);
+            padding: 10px 14px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .val-racha {
+            color: #f97316;
+        }
+
+        .val-multi {
+            color: var(--purple);
+        }
+
+        .arena-box {
+            flex: 1;
+            background: var(--arena-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 220px;
+            transition: all 0.3s ease;
+        }
+
+        /* EFECTOS DE COMBATE Y RESULTADO */
+        .arena-box.state-victoria {
+            border-color: var(--green);
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.25);
+        }
+
+        .arena-box.state-derrota {
+            border-color: var(--red);
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.25);
+        }
+
+        .arena-box.state-empate {
+            border-color: var(--accent);
+            box-shadow: 0 0 35px rgba(56, 189, 248, 0.2);
+        }
+
+        .combatientes {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            width: 100%;
+            z-index: 5;
+        }
+
+        .fighter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fighter-tag {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .hand-display {
+            font-size: 5rem;
+            display: inline-block;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .vs-badge {
+            font-weight: 900;
+            font-size: 1.8rem;
+            color: var(--red);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ANIMACIONES CLÁSICAS DE CHOQUE */
+        .anim-shake-left {
+            animation: shakeP1 0.35s ease-in-out infinite;
+        }
+
+        .anim-shake-right {
+            animation: shakeP2 0.35s ease-in-out infinite;
+        }
+
+        @keyframes shakeP1 {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-28px) rotate(-15deg);
+            }
+        }
+
+        @keyframes shakeP2 {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-28px) rotate(15deg);
+            }
+        }
+
+        .hand-winner {
+            animation: winnerPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            filter: drop-shadow(0 0 20px var(--gold));
+        }
+
+        .hand-loser {
+            opacity: 0.35;
+            transform: scale(0.85);
+            filter: grayscale(0.8);
+            transition: all 0.4s ease;
+        }
+
+        @keyframes winnerPop {
+            0% {
+                transform: scale(0.7);
+            }
+
+            60% {
+                transform: scale(1.35);
+            }
+
+            100% {
+                transform: scale(1.15);
+            }
+        }
+
+        /* BANNER DE RESULTADO INEQUÍVOCO */
+        .result-banner {
+            margin-top: 14px;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .res-espera {
+            background: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--card-border);
+        }
+
+        .res-victoria {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .res-derrota {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: white;
+        }
+
+        .res-empate {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: white;
+        }
+
+        /* BOTONES DE JUGADA */
+        .play-controls {
+            margin-top: 16px;
+        }
+
+        .section-headline {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 0.75px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .choices-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .btn-choice {
+            background: var(--arena-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px 10px;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-choice span.emoji {
+            font-size: 2.2rem;
+        }
+
+        .btn-choice:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: var(--card-bg);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-choice:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* PANEL DERECHO: PROBABILIDADES Y TIENDA */
+        .tactics-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        /* BARRAS DE PROBABILIDAD */
+        .prob-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .prob-card {
+            background: var(--arena-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .prob-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .prob-bar-container {
+            height: 8px;
+            background: var(--card-border);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .prob-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 9999px;
+            transition: width 0.4s ease;
+        }
+
+        .prob-pct {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        /* TIENDA */
+        .shop-section {
+            margin-bottom: 14px;
+        }
+
+        .shop-subheading {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .shop-btns-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .btn-shop {
+            border: 1px solid var(--card-border);
+            background: var(--arena-bg);
+            color: var(--text-main);
+            padding: 8px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-shop-icon {
+            font-size: 1.3rem;
+        }
+
+        .btn-shop-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .btn-shop-price {
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background: var(--gold-bg);
+            color: var(--gold);
+            margin-top: 2px;
+        }
+
+        .btn-shop:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-shop.type-mas:hover:not(:disabled) {
+            border-color: var(--green);
+            background: var(--green-bg);
+        }
+
+        .btn-shop.type-menos:hover:not(:disabled) {
+            border-color: var(--gold);
+            background: var(--gold-bg);
+        }
+
+        .btn-shop.type-quitar:hover:not(:disabled) {
+            border-color: var(--red);
+            background: var(--red-bg);
+        }
+
+        .btn-shop:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .alert-banner {
+            background: var(--gold-bg);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CONFETI SIMPLE EN CSS */
+        .confetti-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 15;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--gold);
+            opacity: 0;
+        }
+
+        /* ===== PANTALLA DE VICTORIA FINAL (10 seguidas) ===== */
+        .final-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(52, 36, 4, 0.94) 0%, rgba(5, 8, 16, 0.97) 70%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .final-overlay.activo {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .final-rayos {
+            position: absolute;
+            width: 140vmax;
+            height: 140vmax;
+            left: 50%;
+            top: 50%;
+            margin: -70vmax 0 0 -70vmax;
+            background: repeating-conic-gradient(from 0deg, rgba(251, 191, 36, 0.18) 0deg 10deg, transparent 10deg 20deg);
+            -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+            mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+            animation: finalGiro 26s linear infinite;
+        }
+
+        #final-canvas {
+            position: absolute;
+            inset: 0;
+        }
+
+        .final-contenido {
+            position: relative;
+            z-index: 2;
+        }
+
+        .final-corona {
+            font-size: clamp(80px, 15vmin, 170px);
+            line-height: 1;
+            filter: drop-shadow(0 0 30px rgba(251, 191, 36, 0.85));
+            animation: finalCorona 1.6s ease-in-out infinite;
+        }
+
+        .final-titulo {
+            margin: 12px 0 0;
+            font-size: clamp(44px, 10vmin, 120px);
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(90deg, #fbbf24, #fff7c2, #f59e0b, #fff7c2, #fbbf24);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 22px rgba(251, 191, 36, 0.55));
+            animation: finalBrillo 2.5s linear infinite, finalEntrada 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+        }
+
+        .final-sub {
+            margin-top: 14px;
+            font-size: clamp(18px, 3.4vmin, 36px);
+            font-weight: 800;
+            color: #fde68a;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: finalEntrada 0.9s 0.25s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+        }
+
+        .final-hint {
+            margin-top: 6vmin;
+            font-size: clamp(14px, 2.4vmin, 24px);
+            color: #cbd5e1;
+            letter-spacing: 1px;
+            animation: finalParpadeo 1.2s ease-in-out infinite;
+        }
+
+        @keyframes finalGiro { to { transform: rotate(360deg); } }
+        @keyframes finalCorona {
+            0%, 100% { transform: translateY(0) rotate(-6deg) scale(1); }
+            50% { transform: translateY(-16px) rotate(6deg) scale(1.1); }
+        }
+        @keyframes finalBrillo { to { background-position: 200% center; } }
+        @keyframes finalEntrada {
+            from { transform: scale(0.2); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes finalParpadeo { 50% { opacity: 0.25; } }
+
+        /* Feedback inmediato al comprar */
+        .btn-shop.pendiente {
+            opacity: 0.6;
+            animation: pulsoCompra 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulsoCompra {
+            from { transform: scale(1); }
+            to { transform: scale(0.96); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- CABECERA PRINCIPAL -->
+    <header>
+        <div class="brand">
+            <span class="brand-icon">⚔️</span>
+            <span>PIEDRA, PAPEL O TIJERA</span>
+        </div>
+
+        <div class="top-controls">
+            <div class="stat-pill pill-gold" title="Monedas ganadas">
+                <span>🪙</span>
+                <span id="header-coins">0</span>
+            </div>
+
+            <!-- Conmutador Tema Claro/Oscuro -->
+            <button class="icon-btn" id="theme-toggle" title="Cambiar tema (Claro / Oscuro)">
+                <span id="theme-icon">☀️</span>
+            </button>
+
+            <!-- Botón Reiniciar -->
+            <button class="icon-btn" onclick="reiniciarPartida()" title="Reiniciar y esperar nueva petición">
+                <span>🔄</span>
+            </button>
+
+            <!-- Botón Cerrar Ejecutable -->
+            <button class="icon-btn btn-exit" onclick="cerrarJuego()" title="Cerrar la aplicación">
+                <span>✕</span>
+                <span>Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- VISTA 1: ESPERA DEL JCL Y TERMINAL -->
+        <div id="vista-launcher" class="vista activa">
+            <div class="card-launcher">
+                <h2 class="launcher-title">ESPERANDO AL MAINFRAME</h2>
+                <p class="launcher-desc">Somete el JCL manualmente. La partida empezará sola en cuanto llegue la petición.</p>
+
+                <div class="espera-box">
+                    <span class="espera-spinner"></span>
+                    <span>Vigilando la petición en z/OSMF...</span>
+                </div>
+
+                <div class="section-headline">🖥️ Terminal z/OSMF Mainframe</div>
+                <div class="terminal-container" id="terminal-logs">
+                    <div class="terminal-line">[LISTO] Esperando que sometas el JCL...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA 2: ARENA TÁCTICA DE COMBATE -->
+        <div id="vista-juego" class="vista">
+            <!-- PANEL IZQUIERDO: ARENA -->
+            <div class="panel">
+                <div class="arena-top-metrics">
+                    <div class="metric-badge">
+                        <span class="metric-label">Racha de Victorias</span>
+                        <span class="metric-val val-racha" id="lbl-racha">🔥 0 / 10</span>
+                    </div>
+                    <div class="metric-badge">
+                        <span class="metric-label">Multiplicador</span>
+                        <span class="metric-val val-multi" id="lbl-mult">✖️ x1.0</span>
+                    </div>
+                </div>
+
+                <!-- ARENA DE CHOQUE -->
+                <div class="arena-box" id="arena-box">
+                    <div class="confetti-container" id="confetti"></div>
+
+                    <div class="combatientes">
+                        <div class="fighter">
+                            <span class="fighter-tag">TÚ</span>
+                            <span class="hand-display" id="mano-tu">✊</span>
+                        </div>
+
+                        <div class="vs-badge">VS</div>
+
+                        <div class="fighter">
+                            <span class="fighter-tag">RIVAL</span>
+                            <span class="hand-display" id="mano-rival">✊</span>
+                        </div>
+                    </div>
+
+                    <div class="result-banner res-espera" id="res-banner">
+                        <span>¡Elige tu jugada!</span>
+                    </div>
+                </div>
+
+                <!-- CONTROLES DE ELECCIÓN -->
+                <div class="play-controls">
+                    <div class="section-headline">👊 Tu Baza de Combate:</div>
+                    <div class="choices-grid">
+                        <button class="btn-choice" id="btn-play-piedra" onclick="jugarBaza('piedra')">
+                            <span class="emoji">✊</span>
+                            <span>Piedra</span>
+                        </button>
+                        <button class="btn-choice" id="btn-play-papel" onclick="jugarBaza('papel')">
+                            <span class="emoji">✋</span>
+                            <span>Papel</span>
+                        </button>
+                        <button class="btn-choice" id="btn-play-tijera" onclick="jugarBaza('tijera')">
+                            <span class="emoji">✌️</span>
+                            <span>Tijera</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DERECHO: TÁCTICA Y TIENDA -->
+            <div class="panel">
+                <div class="section-headline">📊 Probabilidades del Rival</div>
+                <p class="tactics-info">Monitoriza qué es más probable que saque el rival según tus compras:</p>
+
+                <div class="prob-cards-grid">
+                    <div class="prob-card">
+                        <div class="prob-header">
+                            <span>✊ Piedra</span>
+                            <span id="prob-val-piedra" style="color:var(--accent);">33.3%</span>
+                        </div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar-fill" id="bar-piedra" style="width: 33.3%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="prob-card">
+                        <div class="prob-header">
+                            <span>✋ Papel</span>
+                            <span id="prob-val-papel" style="color:var(--accent);">33.3%</span>
+                        </div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar-fill" id="bar-papel" style="width: 33.3%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="prob-card">
+                        <div class="prob-header">
+                            <span>✌️ Tijera</span>
+                            <span id="prob-val-tijera" style="color:var(--accent);">33.3%</span>
+                        </div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar-fill" id="bar-tijera" style="width: 33.3%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-headline">🛒 Tienda Táctica</div>
+                <p class="tactics-info">Gasta monedas para manipular las probabilidades del rival a tu favor:</p>
+
+                <div id="shop-alert" class="alert-banner" style="display:none;">
+                    <span>⚠️</span>
+                    <span>¡Rival acorralado! Solo le queda 1 baza activa. Tienda cerrada.</span>
+                </div>
+
+                <!-- 1. Forzar más probabilidad -->
+                <div class="shop-section">
+                    <div class="shop-subheading">
+                        <span>Aumentar probabilidad del rival</span>
+                        <span id="price-tag-mas">10 🪙</span>
+                    </div>
+                    <div class="shop-btns-grid">
+                        <button class="btn-shop type-mas" id="btn-mas_piedra" onclick="comprarMod('mas_piedra')">
+                            <span class="btn-shop-icon">✊⬆️</span>
+                            <span class="btn-shop-name">Más Piedra</span>
+                            <span class="btn-shop-price" id="cost-mas_piedra">🪙 10</span>
+                        </button>
+                        <button class="btn-shop type-mas" id="btn-mas_papel" onclick="comprarMod('mas_papel')">
+                            <span class="btn-shop-icon">✋⬆️</span>
+                            <span class="btn-shop-name">Más Papel</span>
+                            <span class="btn-shop-price" id="cost-mas_papel">🪙 10</span>
+                        </button>
+                        <button class="btn-shop type-mas" id="btn-mas_tijera" onclick="comprarMod('mas_tijera')">
+                            <span class="btn-shop-icon">✌️⬆️</span>
+                            <span class="btn-shop-name">Más Tijera</span>
+                            <span class="btn-shop-price" id="cost-mas_tijera">🪙 10</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Reducir probabilidad -->
+                <div class="shop-section">
+                    <div class="shop-subheading">
+                        <span>Reducir probabilidad del rival</span>
+                        <span id="price-tag-menos">10 🪙</span>
+                    </div>
+                    <div class="shop-btns-grid">
+                        <button class="btn-shop type-menos" id="btn-menos_piedra" onclick="comprarMod('menos_piedra')">
+                            <span class="btn-shop-icon">✊⬇️</span>
+                            <span class="btn-shop-name">Menos Piedra</span>
+                            <span class="btn-shop-price" id="cost-menos_piedra">🪙 10</span>
+                        </button>
+                        <button class="btn-shop type-menos" id="btn-menos_papel" onclick="comprarMod('menos_papel')">
+                            <span class="btn-shop-icon">✋⬇️</span>
+                            <span class="btn-shop-name">Menos Papel</span>
+                            <span class="btn-shop-price" id="cost-menos_papel">🪙 10</span>
+                        </button>
+                        <button class="btn-shop type-menos" id="btn-menos_tijera" onclick="comprarMod('menos_tijera')">
+                            <span class="btn-shop-icon">✌️⬇️</span>
+                            <span class="btn-shop-name">Menos Tijera</span>
+                            <span class="btn-shop-price" id="cost-menos_tijera">🪙 10</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Quitar baza por completo -->
+                <div class="shop-section">
+                    <div class="shop-subheading">
+                        <span>Eliminar baza permanentemente</span>
+                        <span id="price-tag-quitar">50 🪙</span>
+                    </div>
+                    <div class="shop-btns-grid">
+                        <button class="btn-shop type-quitar" id="btn-quitar_piedra"
+                            onclick="comprarMod('quitar_piedra')">
+                            <span class="btn-shop-icon">✊🚫</span>
+                            <span class="btn-shop-name">Quitar Piedra</span>
+                            <span class="btn-shop-price" id="cost-quitar_piedra">🪙 50</span>
+                        </button>
+                        <button class="btn-shop type-quitar" id="btn-quitar_papel" onclick="comprarMod('quitar_papel')">
+                            <span class="btn-shop-icon">✋🚫</span>
+                            <span class="btn-shop-name">Quitar Papel</span>
+                            <span class="btn-shop-price" id="cost-quitar_papel">🪙 50</span>
+                        </button>
+                        <button class="btn-shop type-quitar" id="btn-quitar_tijera"
+                            onclick="comprarMod('quitar_tijera')">
+                            <span class="btn-shop-icon">✌️🚫</span>
+                            <span class="btn-shop-name">Quitar Tijera</span>
+                            <span class="btn-shop-price" id="cost-quitar_tijera">🪙 50</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA DE VICTORIA FINAL -->
+    <div class="final-overlay" id="final-overlay">
+        <div class="final-rayos"></div>
+        <canvas id="final-canvas"></canvas>
+        <div class="final-contenido">
+            <div class="final-corona">👑</div>
+            <h1 class="final-titulo">¡CAMPEÓN!</h1>
+            <div class="final-sub">🔥 10 victorias seguidas 🔥</div>
+            <div class="final-hint">Pulsa cualquier tecla para jugar de nuevo</div>
+        </div>
+    </div>
+
+    <script>
+        const EMOJIS = { piedra: '✊', papel: '✋', tijera: '✌️' };
+        let enAnimacion = false;
+
+        // --- MODO OSCURO / MODO CLARO ---
+        const themeBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function toggleTema() {
+            const actual = document.documentElement.getAttribute('data-theme');
+            const nuevo = actual === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nuevo);
+            themeIcon.textContent = nuevo === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('ppt_theme', nuevo);
+        }
+
+        const temaGuardado = localStorage.getItem('ppt_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', temaGuardado);
+        themeIcon.textContent = temaGuardado === 'dark' ? '☀️' : '🌙';
+        themeBtn.addEventListener('click', toggleTema);
+
+        // --- CERRAR VENTANA ---
+        // Puerto del guardian externo (debe coincidir con PUERTO_SALIDA en lanzador_ppt.py)
+        const PUERTO_SALIDA = 48931;
+
+        // Cierre forzado: el guardian es otro proceso y mata el juego aunque Python esté bloqueado
+        function salidaDeEmergencia() {
+            const url = `http://127.0.0.1:${PUERTO_SALIDA}/salir`;
+            anadirLog('Forzando el cierre...');
+            const avisoFallo = () => anadirLog(`⚠ El guardián no responde en el puerto ${PUERTO_SALIDA}. Mantén Esc pulsado 2 segundos.`);
+            try { fetch(url, { mode: 'no-cors' }).catch(avisoFallo); } catch (e) { avisoFallo(); }
+            try { new Image().src = url; } catch (e) { }
+        }
+
+        function cerrarJuego() {
+            const apiLista = window.pywebview && window.pywebview.api && window.pywebview.api.cerrar;
+            if (apiLista) {
+                // Cierre normal por Python; si en 2 s la ventana sigue viva, se fuerza
+                try { window.pywebview.api.cerrar(); } catch (e) { }
+                setTimeout(salidaDeEmergencia, 2000);
+            } else {
+                anadirLog('Python no responde: cerrando el juego a la fuerza...');
+                salidaDeEmergencia();
+            }
+        }
+
+        // Si tras 30 s Python sigue sin conectar, avisa de cómo salir (no depende de Python)
+        setTimeout(() => {
+            if (!(window.pywebview && window.pywebview.api && window.pywebview.api.listo)) {
+                anadirLog('⚠ Python no ha conectado. Pulsa Salir (o mantén Esc 2 segundos) para cerrar el juego y vuelve a abrirlo.');
+            }
+        }, 30000);
+
+        // --- CONSOLA TERMINAL LAUNCHER ---
+        function anadirLog(linea) {
+            const box = document.getElementById('terminal-logs');
+            const el = document.createElement('div');
+            el.className = 'terminal-line';
+            el.textContent = linea;
+            box.appendChild(el);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- CONTROL DE VISTAS ---
+        // Avisa a Python en cuanto la API esta lista para arrancar el vigilante sin esperas
+        function avisarListo() {
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.listo) {
+                window.pywebview.api.listo();
+                return true;
+            }
+            return false;
+        }
+        if (!avisarListo()) {
+            window.addEventListener('pywebviewready', avisarListo, { once: true });
+        }
+
+        // Recoge los logs que Python va guardando en cola (sin depender de evaluate_js)
+        let leyendoLogs = false;
+        setInterval(async () => {
+            if (leyendoLogs) return;
+            if (!(window.pywebview && window.pywebview.api && window.pywebview.api.obtener_logs)) return;
+            leyendoLogs = true;
+            try {
+                const lineas = await window.pywebview.api.obtener_logs();
+                (lineas || []).forEach(anadirLog);
+            } catch (e) { /* se reintenta en el siguiente ciclo */ }
+            leyendoLogs = false;
+        }, 250);
+
+        function iniciarVistaJuego(estado) {
+            document.getElementById('vista-launcher').classList.remove('activa');
+            const vj = document.getElementById('vista-juego');
+            vj.classList.add('activa');
+            actualizarInterfaz(estado);
+        }
+
+        // --- SINCRONIZACIÓN DE INTERFAZ Y PROBABILIDADES ---
+        function actualizarInterfaz(estado) {
+            document.getElementById('header-coins').textContent = estado.monedas;
+            document.getElementById('lbl-racha').textContent = `🔥 ${estado.racha} / 10`;
+            document.getElementById('lbl-mult').textContent = `✖️ x${Number(estado.multiplicador).toFixed(1)}`;
+
+            // Actualizar precios de tienda en etiquetas
+            if (estado.preciobs) {
+                document.getElementById('price-tag-mas').textContent = `${estado.preciobs} 🪙`;
+                document.getElementById('price-tag-menos').textContent = `${estado.preciobs} 🪙`;
+            }
+            if (estado.precioq) {
+                document.getElementById('price-tag-quitar').textContent = `${estado.precioq} 🪙`;
+            }
+
+            const totalProb = (estado.prob.piedra + estado.prob.papel + estado.prob.tijera) || 1;
+            const agotadas = Object.keys(estado.prob).filter(k => estado.prob[k] <= 0);
+            const cerrada = agotadas.length >= 2;
+
+            document.getElementById('shop-alert').style.display = cerrada ? 'flex' : 'none';
+
+            // Barras de progreso de probabilidades
+            ['piedra', 'papel', 'tijera'].forEach(baza => {
+                const val = estado.prob[baza];
+                const pct = val <= 0 ? 0 : Math.round((val / totalProb) * 100);
+
+                const labelVal = document.getElementById(`prob-val-${baza}`);
+                const barFill = document.getElementById(`bar-${baza}`);
+
+                if (val <= 0) {
+                    labelVal.textContent = 'ANULADA ❌';
+                    labelVal.style.color = 'var(--red)';
+                    barFill.style.width = '0%';
+                } else {
+                    labelVal.textContent = `${pct}%`;
+                    labelVal.style.color = 'var(--text-main)';
+                    barFill.style.width = `${pct}%`;
+                }
+
+                // Estado de botones en tienda
+                ['mas', 'menos', 'quitar'].forEach(tipo => {
+                    const btn = document.getElementById(`btn-${tipo}_${baza}`);
+                    const costBadge = document.getElementById(`cost-${tipo}_${baza}`);
+                    const coste = tipo === 'quitar' ? (estado.precioq || 50) : (estado.preciobs || 10);
+
+                    if (costBadge) costBadge.textContent = `🪙 ${coste}`;
+
+                    if (cerrada) {
+                        btn.disabled = true;
+                    } else if (val <= 0) {
+                        btn.disabled = true;
+                    } else if (tipo === 'mas' && val >= 1.0) {
+                        btn.disabled = true;
+                    } else {
+                        btn.disabled = false;
+                    }
+                });
+            });
+        }
+
+        // --- ANIMACIONES DE COMBATE MEJORADAS ---
+        async function jugarBaza(eleccion) {
+            if (enAnimacion) return;
+            enAnimacion = true;
+            bloquearBotonesJugada(true);
+
+            const arena = document.getElementById('arena-box');
+            const manoTu = document.getElementById('mano-tu');
+            const manoRival = document.getElementById('mano-rival');
+            const banner = document.getElementById('res-banner');
+
+            // Limpiar clases previas
+            arena.className = 'arena-box';
+            manoTu.className = 'hand-display anim-shake-left';
+            manoRival.className = 'hand-display anim-shake-right';
+            manoTu.textContent = '✊';
+            manoRival.textContent = '✊';
+
+            // Cuenta secuencial sincronizada con cada sacudida
+            const BEAT = 350; // ms, igual que la duración de la animación CSS
+            const t0 = performance.now();
+            banner.className = 'result-banner res-espera';
+            banner.innerHTML = '<span>¡Piedra!</span>';
+            setTimeout(() => { banner.innerHTML = '<span>¡Papel!</span>'; }, BEAT);
+            setTimeout(() => { banner.innerHTML = '<span>¡O tijera!</span>'; }, BEAT * 2);
+
+            // Llamada al backend: arranca YA, en paralelo a la animación
+            const llamada = (async () => {
+            let res;
+            if (window.pywebview && window.pywebview.api) {
+                res = await window.pywebview.api.jugar(eleccion);
+            } else {
+                // Simulación navegador
+                const opciones = ['piedra', 'papel', 'tijera'];
+                const rival = opciones[Math.floor(Math.random() * 3)];
+                let resultado = 'empate';
+                if (eleccion === rival) resultado = 'empate';
+                else if (
+                    (eleccion === 'piedra' && rival === 'tijera') ||
+                    (eleccion === 'papel' && rival === 'piedra') ||
+                    (eleccion === 'tijera' && rival === 'papel')
+                ) resultado = 'gana';
+                else resultado = 'pierde';
+
+                res = {
+                    rival: rival,
+                    resultado: resultado,
+                    mensaje: resultado === 'gana' ? '¡Victoria!' : (resultado === 'pierde' ? 'Derrota' : 'Empate'),
+                    monedas: 10,
+                    racha: resultado === 'gana' ? 1 : 0,
+                    multiplicador: 1.0,
+                    victoria_final: false
+                };
+            }
+
+            return res;
+            })();
+
+            let res;
+            try {
+                res = await llamada;
+            } catch (e) {
+                manoTu.className = 'hand-display';
+                manoRival.className = 'hand-display';
+                banner.className = 'result-banner res-espera';
+                banner.innerHTML = '<span>Error, inténtalo de nuevo</span>';
+                bloquearBotonesJugada(false);
+                enAnimacion = false;
+                return;
+            }
+
+            // Revelar al terminar la 3ª sacudida (o en el siguiente ciclo si el backend tardó más)
+            const transcurrido = performance.now() - t0;
+            const objetivo = Math.max(BEAT * 3, Math.ceil(transcurrido / BEAT) * BEAT);
+            await new Promise(r => setTimeout(r, objetivo - transcurrido));
+
+            {
+                manoTu.className = 'hand-display';
+                manoRival.className = 'hand-display';
+
+                // Revelación de manos
+                manoTu.textContent = EMOJIS[eleccion];
+                manoRival.textContent = EMOJIS[res.rival];
+
+                // Impacto visual según resultado
+                if (res.resultado === 'gana') {
+                    arena.classList.add('state-victoria');
+                    manoTu.classList.add('hand-winner');
+                    manoRival.classList.add('hand-loser');
+                    banner.className = 'result-banner res-victoria';
+                    banner.innerHTML = '<span>🎉 ¡VICTORIA!</span>';
+                    lanzarConfeti();
+                } else if (res.resultado === 'pierde') {
+                    arena.classList.add('state-derrota');
+                    manoRival.classList.add('hand-winner');
+                    manoTu.classList.add('hand-loser');
+                    banner.className = 'result-banner res-derrota';
+                    banner.innerHTML = '<span>💀 DERROTA</span>';
+                } else {
+                    arena.classList.add('state-empate');
+                    banner.className = 'result-banner res-empate';
+                    banner.innerHTML = '<span>🤝 EMPATE</span>';
+                }
+
+                // Actualizar datos
+                document.getElementById('header-coins').textContent = res.monedas;
+                document.getElementById('lbl-racha').textContent = `🔥 ${res.racha} / 10`;
+                document.getElementById('lbl-mult').textContent = `✖️ x${Number(res.multiplicador).toFixed(1)}`;
+
+                if (res.victoria_final) {
+                    banner.innerHTML = '<span>👑 ¡CAMPEÓN! RACHA DE 10 👑</span>';
+                    setTimeout(mostrarVictoriaFinal, 900); // deja ver primero la revelación de manos
+                }
+
+                bloquearBotonesJugada(false);
+                enAnimacion = false;
+            }
+        }
+
+        function bloquearBotonesJugada(bloquear) {
+            document.querySelectorAll('.btn-choice').forEach(b => b.disabled = bloquear);
+        }
+
+        // --- ACCIÓN DE COMPRA EN TIENDA ---
+        let comprando = false;
+        async function comprarMod(item) {
+            if (comprando) return; // evita compras duplicadas mientras responde el backend
+            if (!(window.pywebview && window.pywebview.api)) return;
+            comprando = true;
+
+            // Feedback inmediato: no hay que esperar al backend para ver que se ha pulsado
+            const btn = document.getElementById('btn-' + item);
+            const banner = document.getElementById('res-banner');
+            if (btn) btn.classList.add('pendiente');
+            banner.className = 'result-banner res-espera';
+            banner.innerHTML = '<span>⏳ Comprando...</span>';
+
+            try {
+                const res = await window.pywebview.api.comprar(item);
+                banner.className = 'result-banner res-espera';
+                banner.innerHTML = `<span>${res.mensaje}</span>`;
+                actualizarInterfaz(res.estado);
+            } catch (e) {
+                banner.innerHTML = '<span>Error al comprar, inténtalo de nuevo</span>';
+            } finally {
+                if (btn) btn.classList.remove('pendiente');
+                comprando = false;
+            }
+        }
+
+        // --- REINICIAR ---
+        async function reiniciarPartida() {
+            // No reiniciar a mitad de una jugada o una compra (evita respuestas a una partida ya cerrada)
+            if (enAnimacion || comprando) return;
+
+            // Avisar a Python: olvida la partida actual y reanuda la vigilancia de peticiones
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.volver_a_espera) {
+                    await window.pywebview.api.volver_a_espera();
+                }
+            } catch (e) { /* no es crítico: se vuelve a la pantalla igualmente */ }
+
+            // Dejar la arena limpia para la siguiente partida
+            document.getElementById('mano-tu').textContent = '✊';
+            document.getElementById('mano-rival').textContent = '✊';
+            document.getElementById('mano-tu').className = 'hand-display';
+            document.getElementById('mano-rival').className = 'hand-display';
+            document.getElementById('arena-box').className = 'arena-box';
+            document.getElementById('res-banner').className = 'result-banner res-espera';
+            document.getElementById('res-banner').innerHTML = '<span>¡ELIGE TU JUGADA!</span>';
+            bloquearBotonesJugada(false);
+
+            // Monedas a 0 al salir de la partida (victoria final o reinicio)
+            document.getElementById('header-coins').textContent = '0';
+
+            // Volver a la pantalla de espera del JCL
+            document.getElementById('vista-juego').classList.remove('activa');
+            document.getElementById('vista-launcher').classList.add('activa');
+            anadirLog('[LISTO] Esperando que sometas el JCL...');
+        }
+
+        // --- VICTORIA FINAL (10 seguidas): fuegos artificiales + confeti; cualquier tecla reinicia ---
+        let victoriaFinalActiva = false;
+        let victoriaFinalDesde = 0;
+        let victoriaFinalRAF = null;
+        let victoriaFinalResize = null;
+
+        function mostrarVictoriaFinal() {
+            if (victoriaFinalActiva) return;
+            victoriaFinalActiva = true;
+            victoriaFinalDesde = performance.now();
+
+            const overlay = document.getElementById('final-overlay');
+            const cv = document.getElementById('final-canvas');
+            const ctx = cv.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            let W = 0, H = 0;
+            const ajustar = () => {
+                W = window.innerWidth; H = window.innerHeight;
+                cv.width = W * dpr; cv.height = H * dpr;
+                cv.style.width = W + 'px'; cv.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            };
+            ajustar();
+            victoriaFinalResize = ajustar;
+            window.addEventListener('resize', victoriaFinalResize);
+            overlay.classList.add('activo');
+
+            const colores = ['#fbbf24', '#f59e0b', '#10b981', '#38bdf8', '#ec4899', '#a78bfa', '#ffffff'];
+            const azar = arr => arr[Math.floor(Math.random() * arr.length)];
+            const nuevaPieza = y => ({
+                x: Math.random() * W, y: y,
+                vx: (Math.random() - 0.5) * 1.5, vy: 2 + Math.random() * 3,
+                rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,
+                w: 6 + Math.random() * 6, h: 10 + Math.random() * 8, c: azar(colores)
+            });
+            const piezas = [];
+            for (let i = 0; i < 160; i++) piezas.push(nuevaPieza(-Math.random() * H));
+            let chispas = [];
+            const explotar = (x, y) => {
+                const c = azar(colores);
+                for (let i = 0; i < 80; i++) {
+                    const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 6;
+                    chispas.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vida: 1, c });
+                }
+            };
+
+            let ultimoFuego = 0;
+            const bucle = t => {
+                if (!victoriaFinalActiva) return;
+                ctx.clearRect(0, 0, W, H);
+
+                if (t - ultimoFuego > 450) {
+                    ultimoFuego = t;
+                    explotar(W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.45));
+                }
+
+                chispas.forEach(c => {
+                    c.vx *= 0.985; c.vy = c.vy * 0.985 + 0.08;
+                    c.x += c.vx; c.y += c.vy; c.vida -= 0.012;
+                    ctx.globalAlpha = Math.max(c.vida, 0);
+                    ctx.fillStyle = c.c;
+                    ctx.beginPath(); ctx.arc(c.x, c.y, 2.5, 0, 6.28); ctx.fill();
+                });
+                chispas = chispas.filter(c => c.vida > 0);
+
+                ctx.globalAlpha = 1;
+                piezas.forEach(p => {
+                    p.y += p.vy; p.x += p.vx + Math.sin(p.y / 40); p.rot += p.vr;
+                    if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
+                    ctx.save();
+                    ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+                    ctx.fillStyle = p.c;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                });
+
+                victoriaFinalRAF = requestAnimationFrame(bucle);
+            };
+            victoriaFinalRAF = requestAnimationFrame(bucle);
+        }
+
+        function cerrarVictoriaFinal() {
+            if (!victoriaFinalActiva) return;
+            victoriaFinalActiva = false;
+            if (victoriaFinalRAF) cancelAnimationFrame(victoriaFinalRAF);
+            if (victoriaFinalResize) window.removeEventListener('resize', victoriaFinalResize);
+            document.getElementById('final-overlay').classList.remove('activo');
+            const cv = document.getElementById('final-canvas');
+            cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+            reiniciarPartida();
+        }
+
+        // Cualquier tecla (o clic) reinicia, tras 1.2 s de margen para no cerrarla sin querer
+        function intentarCerrarVictoriaFinal(e) {
+            if (!victoriaFinalActiva) return;
+            if (performance.now() - victoriaFinalDesde < 1200) return;
+            if (e && e.preventDefault) e.preventDefault();
+            cerrarVictoriaFinal();
+        }
+        document.addEventListener('keydown', intentarCerrarVictoriaFinal);
+        document.getElementById('final-overlay').addEventListener('click', intentarCerrarVictoriaFinal);
+
+        // --- EFECTO VISUAL DE CONFETI ---
+        function lanzarConfeti() {
+            const container = document.getElementById('confetti');
+            container.innerHTML = '';
+            const colores = ['#f59e0b', '#10b981', '#38bdf8', '#ec4899', '#ffffff'];
+
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.top = '-10px';
+                p.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                p.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                container.appendChild(p);
+
+                // Caída
+                const duracion = 1000 + Math.random() * 800;
+                p.animate([
+                    { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translate(${(Math.random() - 0.5) * 120}px, 240px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], {
+                    duration: duracion,
+                    easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

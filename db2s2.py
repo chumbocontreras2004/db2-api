@@ -1,4 +1,21 @@
 def conexion(sql):
+    import os
+    import sys
+    from pathlib import Path
+
+    from dotenv import load_dotenv
+
+    # Esto localiza la carpeta donde está el .exe o el script actual:
+    if getattr(sys, "frozen", False):
+        # Si está corriendo compilado como ejecutable (.exe)
+        base_dir = Path(sys.executable).parent
+    else:
+        # Si está corriendo directamente como script de Python
+        base_dir = Path(__file__).parent
+
+    # Carga explícitamente el archivo .env ubicado en esa misma carpeta
+    load_dotenv(base_dir / ".env")
+
     import ibm_db
 
     conn_str = (
@@ -7,7 +24,7 @@ def conexion(sql):
         "PORT=5045;"
         "PROTOCOL=TCPIP;"
         "UID=TSOPSSB;"
-        "PWD=Adrian17;"
+        f"PWD={os.getenv('ZOSMF_PASS', '')};"
     )
     conn = None
     resultado = None

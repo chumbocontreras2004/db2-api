@@ -13,15 +13,23 @@ def crear_juego(ganancia, perdida, preciobs, bsprob, precioq, aumentomult, basep
         # ---------------- CREADOR (INTACTO) -----------------
         def crear(self):
             conexion(
+                """CREATE TABLESPACE SPACEPPT
+                    IN PSSDB0B
+                    USING STOGROUP SYSDEFLT
+                    PRIQTY 720
+                    SECQTY 720
+                    LOCKSIZE ROW"""
+            )
+            conexion(
                 """CREATE TABLE TSOPSSB.PPT (
                     PROB_PIEDRA DECIMAL(5, 4),
                     PROB_PAPEL DECIMAL(5, 4),
                     PROB_TIJERA DECIMAL(5, 4),
                     DINERO INT,
                     RACHA INT,
-                    MULTIPLICADOR DECIMAL(5, 2))"""
+                    MULTIPLICADOR DECIMAL(5, 2))
+                    IN PSSDB0B.SPACEPPT"""
             )
-
             conexion(
                 """INSERT INTO TSOPSSB.PPT (PROB_PIEDRA, PROB_PAPEL, PROB_TIJERA, DINERO, RACHA, MULTIPLICADOR) 
                 VALUES (0.3333, 0.3333, 0.3333, 0, 0, 1)"""
